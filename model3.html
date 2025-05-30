@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Траектория протона в магнитном поле</title>
+    <script src="https://cdn.plot.ly/plotly-2.18.2.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        .param-container {
+            margin: 10px;
+            padding: 20px;
+            border-radius: 12px;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 300px;
+            max-width: 500px;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .param-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+        }
+        label {
+            display: inline-block;
+            width: 200px;
+            margin: 8px 5px;
+            color: #555;
+            font-weight: 500;
+        }
+        input[type="number"] {
+            width: 100px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+            transition: border 0.3s, box-shadow 0.3s;
+        }
+        input[type="number"]:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+            outline: none;
+        }
+
+        .mode-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .time-mode-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .section {
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.2em;
+        }
+
+        .gradient-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 10px;
+            width: 100%;
+        }
+
+        .gradient-cell {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 0;
+        }
+
+        .gradient-cell label {
+            font-size: 0.9em;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .gradient-cell input[type="number"] {
+            width: 100%;
+            max-width: 100%;
+            box-sizing: border-box;
+            padding: 6px;
+            text-align: center;
+        }
+
+        button {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            display: block;
+            width: 100%;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        #fullscreen-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        #fullscreen-image {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+        #close-button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        #close-button:hover {
+            background: linear-gradient(135deg, #d32f2f, #b71c1c);
+        }
+        .plot-container {
+            width: 100%;
+            margin: 20px 0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        input[type="radio"] {
+            margin-right: 8px;
+            accent-color: #4CAF50;
+        }
+        #hitIndicator {
+            margin: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="param-container">
+        <div class="section">
+            <h3>Режим поля</h3>
+            <label>
+                <input type="radio" name="fieldMode" value="uniform" checked> Однородное поле
+            </label>
+            <label>
+                <input type="radio" name="fieldMode" value="nonuniform"> Неоднородное поле
+            </label>
+        </div>
+
+        <div id="uniformParams">
+            <div class="section">
+                <h3>Параметры поля</h3>
+                <label for="B">Магнитное поле B (Тл):</label>
+                <input type="number" id="B" value="1" min="0" step="0.1">
+
+                <label for="theta">Угол θ (°) от оси Z:</label>
+                <input type="number" id="theta" value="45" min="0" max="180" step="1">
+
+                <label for="phi">Угол φ (°) в плоскости XY:</label>
+                <input type="number" id="phi" value="0" min="0" max="360" step="1">
+            </div>
+        </div>
+
+        <div id="nonUniformParams" style="display: none;">
+            <div class="section">
+                <h3>Параметры неоднородного поля</h3>
+                <div class="gradient-grid">
+                    <div class="gradient-cell">
+                        <label>Bₓ (Тл)</label>
+                        <input type="number" id="B0x" value="0" step="0.1">
+                    </div>
+                    <div class="gradient-cell">
+                        <label>Bᵧ (Тл)</label>
+                        <input type="number" id="B0y" value="0" step="0.1">
+                    </div>
+                    <div class="gradient-cell">
+                        <label>B_z (Тл)</label>
+                        <input type="number" id="B0z" value="1" step="0.1">
+                    </div>
+                </div>
+                <h4>Градиенты ∂Bᵢ/∂xⱼ (Тл/м)</h4>
+                <div class="gradient-grid">
+                    <div class="gradient-cell">
+                        <label>∂Bₓ/∂x</label>
+                        <input type="number" id="gxx" value="0" step="0.01">
+                    </div>
+                    <div class="gradient-cell">
+                        <label>∂Bₓ/∂y</label>
+                        <input type="number" id="gxy" value="0" step="0.01">
+                    </div>
+                    <div class="gradient-cell">
+                        <label>∂Bₓ/∂z</label>
+                        <input type="number" id="gxz" value="0" step="0.01">
+                    </div>
+
+                    <div class="gradient-cell">
+                        <label>∂Bᵧ/∂x</label>
+                        <input type="number" id="gyx" value="0" step="0.01">
+                    </div>
+                    <div class="gradient-cell">
+                        <label>∂Bᵧ/∂y</label>
+                        <input type="number" id="gyy" value="0" step="0.01">
+                    </div>
+                    <div class="gradient-cell">
+                        <label>∂Bᵧ/∂z</label>
+                        <input type="number" id="gyz" value="0" step="0.01">
+                    </div>
+
+                    <div class="gradient-cell">
+                        <label>∂B_z/∂x</label>
+                        <input type="number" id="gzx" value="0" step="0.01">
+                    </div>
+                    <div class="gradient-cell">
+                        <label>∂B_z/∂y</label>
+                        <input type="number" id="gzy" value="0" step="0.01">
+                    </div>
+                    <div class="gradient-cell">
+                        <label>∂B_z/∂z</label>
+                        <input type="number" id="gzz" value="0" step="0.01">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mode-selector">
+            <div class="time-mode-group">
+                <input type="radio" name="timeMode" id="periodMode" checked>
+                <label for="periodMode">Периоды:</label>
+                <input type="number" id="periods" value="3" min="1" max="100" step="1">
+            </div>
+
+            <div class="time-mode-group">
+                <input type="radio" name="timeMode" id="timeMode">
+                <label for="timeMode">Время (с):</label>
+                <input type="number" id="customTime" value="1e-6" min="1e-9" max="10" step="0.1">
+            </div>
+        </div>
+    </div>
+
+    <div class="param-container">
+        <div class="section">
+            <h3>Целевая область</h3>
+            <label for="targetX">X (м):</label>
+            <input type="number" id="targetX" value="0.1" step="0.01">
+            <label for="targetY">Y (м):</label>
+            <input type="number" id="targetY" value="0" step="0.01">
+            <label for="targetZ">Z (м):</label>
+            <input type="number" id="targetZ" value="-0.05" step="0.01">
+            <label for="targetRadius">Радиус (м):</label>
+            <input type="number" id="targetRadius" value="0.01" step="0.005">
+        </div>
+
+        <button id="runButton">Запустить симуляцию</button>
+        <div id="hitIndicator"></div>
+    </div>
+</div>
+
+<div class="plot-container">
+    <div id="trajectory3D" style="width: 100%; height: 600px;"></div>
+</div>
+<div class="plot-container">
+    <div id="velocityPlot" style="width: 100%; height: 300px;"></div>
+</div>
+<div class="plot-container">
+    <div id="accelerationPlot" style="width: 100%; height: 300px;"></div>
+</div>
+
+<div id="fullscreen-overlay">
+    <img id="fullscreen-image" src="" alt="Результат">
+    <button id="close-button">Закрыть</button>
+</div>
+
+<script>
+    let currentTrajectory = {
+        x: [], y: [], z: [],
+        vx: [], vy: [], vz: [],
+        ax: [], ay: [], az: [],
+        time: []
+    };
+    let currentTarget = { x: 0, y: 0, z: 0, radius: 0 };
+
+    function BfieldVec(x, y, z) {
+        return {
+            x: parseFloat(document.getElementById('B0x').value) +
+                parseFloat(document.getElementById('gxx').value) * x +
+                parseFloat(document.getElementById('gxy').value) * y +
+                parseFloat(document.getElementById('gxz').value) * z,
+            y: parseFloat(document.getElementById('B0y').value) +
+                parseFloat(document.getElementById('gyx').value) * x +
+                parseFloat(document.getElementById('gyy').value) * y +
+                parseFloat(document.getElementById('gyz').value) * z,
+            z: parseFloat(document.getElementById('B0z').value) +
+                parseFloat(document.getElementById('gzx').value) * x +
+                parseFloat(document.getElementById('gzy').value) * y +
+                parseFloat(document.getElementById('gzz').value) * z
+        };
+    }
+
+    function calculateTrajectory() {
+        const m = 1.67e-27, q = 1.6e-19, v0 = 1e6;
+        const isNonUniform = document.querySelector('input[name="fieldMode"]:checked').value === 'nonuniform';
+
+        let tMax;
+        if(document.getElementById('timeMode').checked) {
+            tMax = parseFloat(document.getElementById('customTime').value);
+        } else {
+            const B = parseFloat(document.getElementById('B').value);
+            const omega = B > 0 ? (q * B) / m : 0;
+            tMax = (2 * Math.PI / omega) * parseFloat(document.getElementById('periods').value);
+        }
+
+        const steps = 1000, dt = tMax / steps;
+        let r = { x: 0, y: 0, z: 0 }, v = { x: 0, y: 0, z: 0 };
+        let traj = [], timeArr = [], vxArr = [], vyArr = [], vzArr = [], axArr = [], ayArr = [], azArr = [];
+        let hit = false;
+
+        if(!isNonUniform) {
+            const B = parseFloat(document.getElementById('B').value);
+            const theta = parseFloat(document.getElementById('theta').value) * Math.PI / 180;
+            const phi = parseFloat(document.getElementById('phi').value) * Math.PI / 180;
+
+            const B_dir = {
+                x: Math.sin(theta) * Math.cos(phi),
+                y: Math.sin(theta) * Math.sin(phi),
+                z: Math.cos(theta)
+            };
+
+            const omega = B > 0 ? (q * B) / m : 0;
+            const v_parallel = v0 * B_dir.x;
+            const v_perp = Math.sqrt(v0**2 - v_parallel**2);
+            const R = omega > 0 ? (m * v_perp) / (q * B) : 0;
+            const rotMatrix = calculateRotationMatrix(theta, phi);
+
+            for(let t = 0; t <= tMax; t += dt) {
+                const wt = omega * t;
+                const x = v_parallel * t;
+                const y = R * Math.sin(wt);
+                const z = R * (1 - Math.cos(wt));
+
+                const vx = v_parallel;
+                const vy = R * omega * Math.cos(wt);
+                const vz = R * omega * Math.sin(wt);
+                const ax = 0;
+                const ay = -R * omega**2 * Math.sin(wt);
+                const az = R * omega**2 * Math.cos(wt);
+
+                const pos = applyRotation(rotMatrix, [x, y, z]);
+                const vel = applyRotation(rotMatrix, [vx, vy, vz]);
+                const acc = applyRotation(rotMatrix, [ax, ay, az]);
+
+                traj.push(pos);
+                vxArr.push(vel[0]);
+                vyArr.push(vel[1]);
+                vzArr.push(vel[2]);
+                axArr.push(acc[0]);
+                ayArr.push(acc[1]);
+                azArr.push(acc[2]);
+                timeArr.push(t);
+            }
+        } else {
+            const theta = parseFloat(document.getElementById('theta').value) * Math.PI / 180;
+            const phi = parseFloat(document.getElementById('phi').value) * Math.PI / 180;
+            v.x = v0 * Math.sin(theta) * Math.cos(phi);
+            v.y = v0 * Math.sin(theta) * Math.sin(phi);
+            v.z = v0 * Math.cos(theta);
+
+            for(let i = 0; i <= steps; i++) {
+                const t = i * dt;
+                const B = BfieldVec(r.x, r.y, r.z);
+
+                const ax = (q/m) * (v.y * B.z - v.z * B.y);
+                const ay = (q/m) * (v.z * B.x - v.x * B.z);
+                const az = (q/m) * (v.x * B.y - v.y * B.x);
+
+                v.x += ax * dt;
+                v.y += ay * dt;
+                v.z += az * dt;
+
+                r.x += v.x * dt;
+                r.y += v.y * dt;
+                r.z += v.z * dt;
+
+                traj.push([r.x, r.y, r.z]);
+                vxArr.push(v.x);
+                vyArr.push(v.y);
+                vzArr.push(v.z);
+                axArr.push(ax);
+                ayArr.push(ay);
+                azArr.push(az);
+                timeArr.push(t);
+            }
+        }
+
+        currentTrajectory = {
+            x: traj.map(p => p[0]),
+            y: traj.map(p => p[1]),
+            z: traj.map(p => p[2]),
+            vx: vxArr,
+            vy: vyArr,
+            vz: vzArr,
+            ax: axArr,
+            ay: ayArr,
+            az: azArr,
+            time: timeArr
+        };
+
+        currentTarget = {
+            x: parseFloat(document.getElementById('targetX').value),
+            y: parseFloat(document.getElementById('targetY').value),
+            z: parseFloat(document.getElementById('targetZ').value),
+            radius: parseFloat(document.getElementById('targetRadius').value)
+        };
+
+        updateGraphs();
+    }
+
+    function checkTargetHit() {
+        let hit = false;
+        const { x, y, z } = currentTrajectory;
+        const { x: tx, y: ty, z: tz, radius: tr } = currentTarget;
+
+        for(let i = 0; i < x.length; i++) {
+            const dx = x[i] - tx;
+            const dy = y[i] - ty;
+            const dz = z[i] - tz;
+            if(Math.sqrt(dx*dx + dy*dy + dz*dz) <= tr) {
+                hit = true;
+                break;
+            }
+        }
+
+        const overlay = document.getElementById('fullscreen-overlay');
+        const image = document.getElementById('fullscreen-image');
+
+        if(hit) {
+            document.getElementById('hitIndicator').innerText = '✅ Попадание в цель!';
+            image.src = 'success.png';
+        } else {
+            document.getElementById('hitIndicator').innerText = '❌ Промах!';
+            image.src = 'lose.png';
+        }
+        overlay.style.display = 'flex';
+    }
+
+    function calculateRotationMatrix(theta, phi) {
+        const cθ = Math.cos(theta), sθ = Math.sin(theta);
+        const cφ = Math.cos(phi), sφ = Math.sin(phi);
+        return [
+            [cφ*cθ, -sφ, cφ*sθ],
+            [sφ*cθ, cφ, sφ*sθ],
+            [-sθ, 0, cθ]
+        ];
+    }
+
+    function applyRotation(M, v) {
+        return [
+            M[0][0]*v[0] + M[0][1]*v[1] + M[0][2]*v[2],
+            M[1][0]*v[0] + M[1][1]*v[1] + M[1][2]*v[2],
+            M[2][0]*v[0] + M[2][1]*v[1] + M[2][2]*v[2]
+        ];
+    }
+
+    function createSphere(center, radius, res=30) {
+        const [cx, cy, cz] = center;
+        const theta = [], phi = [];
+        for (let i=0; i<=res; i++) theta.push(Math.PI*i/res);
+        for (let j=0; j<=res; j++) phi.push(2*Math.PI*j/res);
+        const x=[], y=[], z=[];
+        theta.forEach(t => phi.forEach(p => {
+            x.push(cx + radius*Math.sin(t)*Math.cos(p));
+            y.push(cy + radius*Math.sin(t)*Math.sin(p));
+            z.push(cz + radius*Math.cos(t));
+        }));
+        return {x, y, z};
+    }
+
+    function updateGraphs() {
+        const { x, y, z } = currentTrajectory;
+        const { x: tx, y: ty, z: tz, radius: tr } = currentTarget;
+
+        const sphere = createSphere([tx, ty, tz], tr, 30);
+        const M = Math.max(...x, ...y, ...z, tx+tr, ty+tr, tz+tr) * 1.1;
+
+        Plotly.react('trajectory3D', [
+            {
+                x: x, y: y, z: z,
+                type: 'scatter3d',
+                mode: 'lines',
+                line: { color: '#4CAF50', width: 3 },
+                name: 'Траектория'
+            },
+            {
+                x: sphere.x,
+                y: sphere.y,
+                z: sphere.z,
+                type: 'mesh3d',
+                opacity: 0.3,
+                color: '#f44336',
+                name: 'Цель'
+            }
+        ], {
+            title: '<b>3D Траектория протона</b>',
+            scene: {
+                xaxis: { range: [-M, M] },
+                yaxis: { range: [-M, M] },
+                zaxis: { range: [-M, M] },
+                aspectmode: 'cube'
+            }
+        });
+
+        Plotly.react('velocityPlot', [
+            { x: currentTrajectory.time, y: currentTrajectory.vx, name: 'Vx', line: {color: '#FF5722'} },
+            { x: currentTrajectory.time, y: currentTrajectory.vy, name: 'Vy', line: {color: '#2196F3'} },
+            { x: currentTrajectory.time, y: currentTrajectory.vz, name: 'Vz', line: {color: '#4CAF50'} }
+        ], {
+            title: '<b>Скорость протона</b>',
+            xaxis: { title: 'Время (с)' },
+            yaxis: { title: 'Скорость (м/с)' }
+        });
+
+        Plotly.react('accelerationPlot', [
+            { x: currentTrajectory.time, y: currentTrajectory.ax, name: 'Ax', line: {color: '#FF5722'} },
+            { x: currentTrajectory.time, y: currentTrajectory.ay, name: 'Ay', line: {color: '#2196F3'} },
+            { x: currentTrajectory.time, y: currentTrajectory.az, name: 'Az', line: {color: '#4CAF50'} }
+        ], {
+            title: '<b>Ускорение протона</b>',
+            xaxis: { title: 'Время (с)' },
+            yaxis: { title: 'Ускорение (м/с²)' }
+        });
+    }
+
+    function runSimulation() {
+        calculateTrajectory();
+        checkTargetHit();
+    }
+
+    document.querySelectorAll('input').forEach(input => {
+        if (input.id !== 'runButton') {
+            input.addEventListener('input', calculateTrajectory);
+        }
+    });
+
+    document.getElementById('close-button').addEventListener('click', function() {
+        document.getElementById('fullscreen-overlay').style.display = 'none';
+    });
+
+    document.querySelectorAll('input[name="fieldMode"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.getElementById('uniformParams').style.display =
+                radio.value === 'uniform' ? 'block' : 'none';
+            document.getElementById('nonUniformParams').style.display =
+                radio.value === 'nonuniform' ? 'block' : 'none';
+        });
+    });
+
+    document.getElementById('runButton').addEventListener('click', runSimulation);
+
+    document.querySelectorAll('input').forEach(input => {
+        if (input.id !== 'runButton') {
+            input.addEventListener('input', calculateTrajectory);
+        }
+    });
+</script>
+</body>
+</html>
