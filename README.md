@@ -60,7 +60,7 @@
 
     Для произвольного направления вектора $\vec{B}$, используется матрица поворота:
 
-    $R(\theta,\phi) = \begin{pmatrix} \cos\phi \cos\theta & -\sin\phi & \cos\phi \sin\theta \\ \sin\phi \cos\theta & \cos\phi & \sin\phi \sin\theta \\ -\sin\theta & 0 & \cos\theta \end{pmatrix}$
+    ![Rotation Matrix](https://latex.codecogs.com/png.latex?%5Cdpi%7B120%7D%20%5Cbg_white%20R%28%5Ctheta%2C%5Cphi%29%20%3D%20%5Cbegin%7Bpmatrix%7D%20%5Ccos%5Cphi%20%5Ccos%5Ctheta%20%26%20-%5Csin%5Cphi%20%26%20%5Ccos%5Cphi%20%5Csin%5Ctheta%20%5C%5C%20%5Csin%5Cphi%20%5Ccos%5Ctheta%20%26%20%5Ccos%5Cphi%20%26%20%5Csin%5Cphi%20%5Csin%5Ctheta%20%5C%5C%20-%5Csin%5Ctheta%20%26%200%20%26%20%5Ccos%5Ctheta%20%5Cend%7Bpmatrix%7D)
 
 2) Неоднородное поле
     При моделировании используется линеаризованное поле:
@@ -69,7 +69,7 @@
 
     Для случая неоднородного поля добавим интегрирование при помощи метода Эйлера:
 
-    $\begin{aligned}\vec{a}_n &= \frac{q}{m}(\vec{v}_n \times \vec{B}(\vec{r}_n)) \\ \vec{v}_{n+1} &= \vec{v}_n + \vec{a}_n \Delta t \\ \vec{r}_{n+1} &= \vec{r}_n + \vec{v}_n \Delta t \end{aligned}$
+    ![Euler Method](https://latex.codecogs.com/png.latex?%5Cdpi%7B120%7D%20%5Cbg_white%20%5Cbegin%7Baligned%7D%5Cvec%7Ba%7D_n%20%26%3D%20%5Cfrac%7Bq%7D%7Bm%7D%28%5Cvec%7Bv%7D_n%20%5Ctimes%20%5Cvec%7BB%7D%28%5Cvec%7Br%7D_n%29%29%20%5C%5C%20%5Cvec%7Bv%7D_%7Bn%2B1%7D%20%26%3D%20%5Cvec%7Bv%7D_n%20%2B%20%5Cvec%7Ba%7D_n%20%5CDelta%20t%20%5C%5C%20%5Cvec%7Br%7D_%7Bn%2B1%7D%20%26%3D%20%5Cvec%7Br%7D_n%20%2B%20%5Cvec%7Bv%7D_n%20%5CDelta%20t%20%5Cend%7Baligned%7D)
 
     Где $\Delta t$ - шаг интегрирования
 
